@@ -235,7 +235,7 @@ lazy val docs = project       // new documentation project
     scalacOptions += "-language:reflectiveCalls",
     mdocIn := file("docs/src"),
     mdocOut := file("docs/generated"),
-    mdocExtraArguments := Seq("--cwd", "docs"),
+    mdocExtraArguments := Seq("--cwd", "docs", "--no-link-hygiene"),
     mdocVariables := Map(
       "BUILD_DIR" -> "docs-target" // build dir for mdoc programs to dump temp files
     )

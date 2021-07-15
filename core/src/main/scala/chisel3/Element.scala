@@ -34,6 +34,11 @@ abstract class Element extends Data {
       case Some(litArg) => Some(ElementLitBinding(litArg))
       case _ => Some(DontCareBinding())
     }
+    case Some(AggregateViewBinding(viewMap)) => viewMap.get(this) match {
+      case Some(elt) => Some(ViewBinding(elt))
+        // TODO provide nice error message
+      case _ => ???
+    }
     case topBindingOpt => topBindingOpt
   }
 

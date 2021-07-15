@@ -88,44 +88,6 @@ sealed abstract class Aggregate extends Data {
     }
   }
 
-  // Returns pairs of all fields, element-level and containers, in a Record and their path names
-  private[chisel3] def getRecursiveFields(data: Data, path: String): Seq[(Data, String)] = data match {
-    case data: Record =>
-      data.elements.map { case (fieldName, fieldData) =>
-        getRecursiveFields(fieldData, s"$path.$fieldName")
-      }.fold(Seq(data -> path)) {
-        _ ++ _
-      }
-    case data: Vec[_] =>
-      data.getElements.zipWithIndex.map { case (fieldData, fieldIndex) =>
-        getRecursiveFields(fieldData, path = s"$path($fieldIndex)")
-      }.fold(Seq(data -> path)) {
-        _ ++ _
-      }
-    case data => Seq(data -> path) // we don't support or recurse into other Aggregate types here
-  }
-
-
-  // Returns pairs of corresponding fields between two Records of the same type
-  private[chisel3] def getMatchedFields(x: Data, y: Data): Seq[(Data, Data)] = (x, y) match {
-    case (x: Element, y: Element) =>
-      require(x typeEquivalent y)
-      Seq(x -> y)
-    case (x: Record, y: Record) =>
-      (x.elements zip y.elements).map { case ((xName, xElt), (yName, yElt)) =>
-        require(xName == yName) // assume fields returned in same, deterministic order
-        getMatchedFields(xElt, yElt)
-      }.fold(Seq(x -> y)) {
-        _ ++ _
-      }
-    case (x: Vec[_], y: Vec[_]) =>
-      (x.getElements zip y.getElements).map { case (xElt, yElt) =>
-        getMatchedFields(xElt, yElt)
-      }.fold(Seq(x -> y)) {
-        _ ++ _
-      }
-  }
-
   override def do_asUInt(implicit sourceInfo: SourceInfo, compileOptions: CompileOptions): UInt = {
     SeqUtils.do_asUInt(flatten.map(_.asUInt()))
   }

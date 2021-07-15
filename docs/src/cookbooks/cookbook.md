@@ -9,12 +9,13 @@ section: "chisel3"
 
 Please note that these examples make use of [Chisel's scala-style printing](../explanations/printing#scala-style).
 
-* Converting Chisel Types to/from UInt
+* Type Conversions
   * [How do I create a UInt from an instance of a Bundle?](#how-do-i-create-a-uint-from-an-instance-of-a-bundle)
   * [How do I create a Bundle from a UInt?](#how-do-i-create-a-bundle-from-a-uint)
   * [How can I tieoff a Bundle/Vec to 0?](#how-can-i-tieoff-a-bundlevec-to-0)
   * [How do I create a Vec of Bools from a UInt?](#how-do-i-create-a-vec-of-bools-from-a-uint)
   * [How do I create a UInt from a Vec of Bool?](#how-do-i-create-a-uint-from-a-vec-of-bool)
+  * [How do I connect a subset of Bundle fields?](#how-do-i-connect-a-subset-of-bundle-fields)
 * Vectors and Registers
   * [How do I create a Vector of Registers?](#how-do-i-create-a-vector-of-registers)
   * [How do I create a Reg of type Vec?](#how-do-i-create-a-reg-of-type-vec)
@@ -27,7 +28,7 @@ Please note that these examples make use of [Chisel's scala-style printing](../e
   * [How do I get Chisel to name the results of vector reads properly?](#how-do-i-get-chisel-to-name-the-results-of-vector-reads-properly)
   * [How can I dynamically set/parametrize the name of a module?](#how-can-i-dynamically-setparametrize-the-name-of-a-module)
 
-## Converting Chisel Types to/from UInt
+## Type Conversions
 
 ### How do I create a UInt from an instance of a Bundle?
 
@@ -147,6 +148,10 @@ class Foo extends RawModule {
 
 }
 ```
+
+### How do I connect a subset of Bundle fields?
+
+See the [DataView cookbook](dataview#how-do-i-connect-a-subset-of-bundle-fields).
 
 ## Vectors and Registers
 

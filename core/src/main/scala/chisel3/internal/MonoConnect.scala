@@ -5,7 +5,9 @@ package chisel3.internal
 import chisel3._
 import chisel3.experimental.{Analog, BaseModule, EnumType, FixedPoint, Interval, UnsafeEnum}
 import chisel3.internal.Builder.pushCommand
+import chisel3.experimental.dataview.reify
 import chisel3.internal.firrtl.{Connect, DefInvalid}
+
 import scala.language.experimental.macros
 import chisel3.internal.sourceinfo.SourceInfo
 
@@ -188,8 +190,10 @@ private[chisel3] object MonoConnect {
 
   // This function checks if element-level connection operation allowed.
   // Then it either issues it or throws the appropriate exception.
-  def elemConnect(implicit sourceInfo: SourceInfo, connectCompileOptions: CompileOptions, sink: Element, source: Element, context_mod: RawModule): Unit = {
+  def elemConnect(implicit sourceInfo: SourceInfo, connectCompileOptions: CompileOptions, _sink: Element, _source: Element, context_mod: RawModule): Unit = {
     import BindingDirection.{Internal, Input, Output} // Using extensively so import these
+    val sink = reify(_sink)
+    val source = reify(_source)
     // If source has no location, assume in context module
     // This can occur if is a literal, unbound will error previously
     val sink_mod: BaseModule   = sink.topBinding.location.getOrElse(throw UnwritableSinkException)

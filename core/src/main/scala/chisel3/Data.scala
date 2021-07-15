@@ -2,6 +2,8 @@
 
 package chisel3
 
+import chisel3.experimental.dataview.reify
+
 import scala.language.experimental.macros
 import chisel3.experimental.{Analog, DataMirror, FixedPoint, Interval}
 import chisel3.internal.Builder.pushCommand
@@ -233,6 +235,62 @@ private[chisel3] object cloneSupertype {
       }
       filteredElts.head.cloneTypeFull
     }
+  }
+}
+
+// Returns pairs of all fields, element-level and containers, in a Record and their path names
+private[chisel3] object getRecursiveFields {
+  def apply(data: Data, path: String): Seq[(Data, String)] = data match {
+    case data: Record =>
+      data.elements.map { case (fieldName, fieldData) =>
+        getRecursiveFields(fieldData, s"$path.$fieldName")
+      }.fold(Seq(data -> path)) {
+        _ ++ _
+      }
+    case data: Vec[_] =>
+      data.getElements.zipWithIndex.map { case (fieldData, fieldIndex) =>
+        getRecursiveFields(fieldData, path = s"$path($fieldIndex)")
+      }.fold(Seq(data -> path)) {
+        _ ++ _
+      }
+    case data: Element => Seq(data -> path)
+  }
+
+//  def lazily(data: Data, path: String): LazyList[(Data, String)] = data match {
+//    case data: Record =>
+//      LazyList(data -> path) #:::
+//        data.elements.to(LazyList).flatMap { case (fieldName, fieldData) =>
+//          getRecursiveFields(fieldData, s"$path.$fieldName")
+//        }
+//    case data: Vec[_] =>
+//      LazyList(data -> path) #:::
+//        data.getElements.to(LazyList).zipWithIndex.flatMap { case (fieldData, fieldIndex) =>
+//          getRecursiveFields(fieldData, path = s"$path($fieldIndex)")
+//        }
+//    case data: Element => LazyList(data -> path)
+//  }
+}
+
+// Returns pairs of corresponding fields between two Records of the same type
+// TODO it seems wrong that Elements are checked for typeEquivalence in Bundle and Vec lit creation
+private[chisel3] object getMatchedFields {
+  def apply(x: Data, y: Data): Seq[(Data, Data)] = (x, y) match {
+    case (x: Element, y: Element) =>
+      require(x typeEquivalent y)
+      Seq(x -> y)
+    case (x: Record, y: Record) =>
+      (x.elements zip y.elements).map { case ((xName, xElt), (yName, yElt)) =>
+        require(xName == yName) // assume fields returned in same, deterministic order
+        getMatchedFields(xElt, yElt)
+      }.fold(Seq(x -> y)) {
+        _ ++ _
+      }
+    case (x: Vec[_], y: Vec[_]) =>
+      (x.getElements zip y.getElements).map { case (xElt, yElt) =>
+        getMatchedFields(xElt, yElt)
+      }.fold(Seq(x -> y)) {
+        _ ++ _
+      }
   }
 }
 
@@ -488,6 +546,14 @@ abstract class Data extends HasId with NamedComponent with SourceInfoDoc {
     }
     requireIsHardware(this)
     topBindingOpt match {
+      // DataView
+      case Some(ViewBinding(target)) => reify(target).ref
+      case Some(AggregateViewBinding(viewMap)) =>
+        viewMap.get(this) match {
+          case None => materializeWire() // FIXME FIRRTL doesn't have Aggregate Init expressions
+          // This should not be possible, .topBinding should return a ViewBinding
+          case x: Some[_] => throwException(s"Internal Error: In .ref for $this got '$topBindingOpt' and '$x'")
+        }
       // Literals
       case Some(ElementLitBinding(litArg)) => litArg
       case Some(BundleLitBinding(litMap)) =>

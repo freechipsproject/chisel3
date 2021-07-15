@@ -303,6 +303,12 @@ package experimental {
       }
     }
 
+    // Returns the last id contained within a Module
+    private[chisel3] def _lastId: Long = _ids.last match {
+      case mod: BaseModule => mod._lastId
+      case other => other._id
+    }
+
     protected def getIds = {
       require(_closed, "Can't get ids before module close")
       _ids.toSeq
